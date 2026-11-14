@@ -1,74 +1,174 @@
-import { Image, StyleSheet, Platform } from 'react-native';
+import { useState } from 'react';
+import { StyleSheet, TextInput, TouchableOpacity, ScrollView, Alert } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 
-import { HelloWave } from '@/components/HelloWave';
-import ParallaxScrollView from '@/components/ParallaxScrollView';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
+import { useUsers } from '@/context/UsersContext';
 
 export default function HomeScreen() {
+  const { addUser } = useUsers();
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [email, setEmail] = useState('');
+  const [age, setAge] = useState('');
+
+  const handleAddUser = () => {
+    if (!firstName || !lastName || !email || !age) {
+      alert('Please fill in all fields');
+      return;
+    }
+
+    addUser({
+      firstName,
+      lastName,
+      email,
+      age,
+    });
+
+    // Clear form
+    setFirstName('');
+    setLastName('');
+    setEmail('');
+    setAge('');
+  };
+
+  const handleMenuPress = () => {
+    Alert.alert(
+      "Options",
+      "Choose an option",
+      [
+        {
+          text: "About App",
+          onPress: () => Alert.alert("About App", "User List App v1.0\nA simple app to manage users.")
+        },
+        {
+          text: "Help",
+          onPress: () => Alert.alert("Help", "Need help? Contact support at support@userlistapp.com")
+        },
+        {
+          text: "Cancel",
+          style: "cancel"
+        }
+      ]
+    );
+  };
+
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
+    <ThemedView style={styles.mainContainer}>
+      <ThemedView style={styles.header}>
+        <ThemedText type="title" style={styles.headerTitle}>Add New User</ThemedText>
+        <TouchableOpacity onPress={handleMenuPress} style={styles.menuButton}>
+          <Ionicons name="ellipsis-vertical" size={24} color="#007AFF" />
+        </TouchableOpacity>
       </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12'
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-        <ThemedText>
-          Tap the Explore tab to learn more about what's included in this starter app.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          When you're ready, run{' '}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+
+      <ScrollView style={styles.container}>
+        <ThemedView style={styles.formContainer}>
+          <ThemedView style={styles.inputContainer}>
+            <ThemedText>First Name</ThemedText>
+            <TextInput
+              style={styles.input}
+              value={firstName}
+              onChangeText={setFirstName}
+              placeholder="Enter first name"
+              placeholderTextColor="#666"
+            />
+          </ThemedView>
+
+          <ThemedView style={styles.inputContainer}>
+            <ThemedText>Last Name</ThemedText>
+            <TextInput
+              style={styles.input}
+              value={lastName}
+              onChangeText={setLastName}
+              placeholder="Enter last name"
+              placeholderTextColor="#666"
+            />
+          </ThemedView>
+
+          <ThemedView style={styles.inputContainer}>
+            <ThemedText>Email</ThemedText>
+            <TextInput
+              style={styles.input}
+              value={email}
+              onChangeText={setEmail}
+              placeholder="Enter email"
+              placeholderTextColor="#666"
+              keyboardType="email-address"
+              autoCapitalize="none"
+            />
+          </ThemedView>
+
+          <ThemedView style={styles.inputContainer}>
+            <ThemedText>Age</ThemedText>
+            <TextInput
+              style={styles.input}
+              value={age}
+              onChangeText={setAge}
+              placeholder="Enter age"
+              placeholderTextColor="#666"
+              keyboardType="numeric"
+            />
+          </ThemedView>
+
+          <TouchableOpacity style={styles.button} onPress={handleAddUser}>
+            <ThemedText style={styles.buttonText}>Add User</ThemedText>
+          </TouchableOpacity>
+        </ThemedView>
+      </ScrollView>
+    </ThemedView>
   );
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
+  mainContainer: {
+    flex: 1,
+  },
+  header: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#ccc',
+    backgroundColor: '#fff',
+  },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+  },
+  menuButton: {
+    padding: 8,
+  },
+  container: {
+    flex: 1,
+  },
+  formContainer: {
+    padding: 20,
+    gap: 16,
+  },
+  inputContainer: {
     gap: 8,
   },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
+  input: {
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 16,
+    backgroundColor: '#fff',
   },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
+  button: {
+    backgroundColor: '#007AFF',
+    padding: 16,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  buttonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
   },
 });
