@@ -27,7 +27,7 @@ interface FormErrors {
 
 export default function AddUserScreen() {
   const router = useRouter();
-  const { addUser } = useUsers();
+  const { users, addUser } = useUsers();
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme];
 
@@ -55,10 +55,13 @@ export default function AddUserScreen() {
     }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const emailLower = email.trim().toLowerCase();
     if (!email.trim()) {
       newErrors.email = "L'adresse email est requise";
     } else if (!emailRegex.test(email.trim())) {
       newErrors.email = 'Veuillez saisir un email valide (ex: nom@domaine.com)';
+    } else if (users.some((u) => u.email.toLowerCase() === emailLower)) {
+      newErrors.email = 'Un utilisateur avec cette adresse email existe déjà';
     }
 
     const ageNum = parseInt(age.trim(), 10);

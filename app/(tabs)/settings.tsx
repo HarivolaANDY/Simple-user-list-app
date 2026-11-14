@@ -7,6 +7,7 @@ import {
   Alert,
   View,
   Text,
+  Share,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -19,9 +20,25 @@ import { Colors } from '@/constants/Colors';
 export default function SettingsScreen() {
   const insets = useSafeAreaInsets();
   const { settings, toggleDarkMode, toggleScreenRotation, resetSettings } = useSettings();
-  const { resetUsers } = useUsers();
+  const { users, resetUsers } = useUsers();
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme];
+
+  const handleExportData = async () => {
+    try {
+      if (users.length === 0) {
+        Alert.alert('Information', 'Aucun utilisateur à exporter.');
+        return;
+      }
+      await Share.share({
+        title: 'Export Utilisateurs',
+        message: JSON.stringify(users, null, 2),
+      });
+    } catch (error) {
+      Alert.alert('Erreur', "Impossible d'exporter les données.");
+      console.error(error);
+    }
+  };
 
   const handleResetSettings = () => {
     Alert.alert(
@@ -169,6 +186,32 @@ export default function SettingsScreen() {
                 shadowOpacity: colorScheme === 'dark' ? 0.3 : 0.05,
               },
             ]}>
+            {/* Export JSON */}
+            <Pressable
+              onPress={handleExportData}
+              style={({ pressed }) => [
+                styles.actionRow,
+                { opacity: pressed ? 0.7 : 1 },
+              ]}
+              accessibilityRole="button"
+              accessibilityLabel="Exporter les utilisateurs au format JSON"
+              accessibilityHint="Ouvre le menu de partage système pour sauvegarder la liste d'utilisateurs">
+              <View style={[styles.iconContainer, { backgroundColor: colors.background }]}>
+                <Ionicons name="share-outline" size={20} color={colors.primary} />
+              </View>
+              <View style={styles.rowInfo}>
+                <Text style={[styles.rowLabel, { color: colors.text }]}>
+                  Exporter les utilisateurs (JSON)
+                </Text>
+                <Text style={[styles.rowDescription, { color: colors.secondaryText }]}>
+                  Partager ou sauvegarder la liste au format JSON
+                </Text>
+              </View>
+              <Ionicons name="chevron-forward" size={18} color={colors.tertiaryText} />
+            </Pressable>
+
+            <View style={[styles.divider, { backgroundColor: colors.border }]} />
+
             {/* Reset Users */}
             <Pressable
               onPress={handleResetUsers}

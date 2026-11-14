@@ -141,6 +141,7 @@ export default function UsersScreen() {
   const isDark = colorScheme === 'dark';
 
   const [searchQuery, setSearchQuery] = useState('');
+  const [sortMode, setSortMode] = useState<'recent' | 'name' | 'age'>('recent');
   const [editingUser, setEditingUser] = useState<User | null>(null);
 
   // Edit form state
@@ -150,18 +151,28 @@ export default function UsersScreen() {
   const [editAge, setEditAge] = useState('');
   const [editError, setEditError] = useState<string | null>(null);
 
-  // Filtered users by search query
+  // Filtered and sorted users
   const filteredUsers = useMemo(() => {
-    if (!searchQuery.trim()) return users;
-    const q = searchQuery.toLowerCase().trim();
-    return users.filter(
-      (u) =>
-        u.firstName.toLowerCase().includes(q) ||
-        u.lastName.toLowerCase().includes(q) ||
-        u.email.toLowerCase().includes(q) ||
-        u.age.includes(q)
-    );
-  }, [users, searchQuery]);
+    let list = users;
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase().trim();
+      list = list.filter(
+        (u) =>
+          u.firstName.toLowerCase().includes(q) ||
+          u.lastName.toLowerCase().includes(q) ||
+          u.email.toLowerCase().includes(q) ||
+          u.age.includes(q)
+      );
+    }
+
+    if (sortMode === 'name') {
+      return [...list].sort((a, b) => a.lastName.localeCompare(b.lastName));
+    }
+    if (sortMode === 'age') {
+      return [...list].sort((a, b) => parseInt(a.age, 10) - parseInt(b.age, 10));
+    }
+    return list;
+  }, [users, searchQuery, sortMode]);
 
   const handleDeleteUser = useCallback(
     (user: User) => {
@@ -199,8 +210,18 @@ export default function UsersScreen() {
     }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const emailLower = editEmail.trim().toLowerCase();
     if (!emailRegex.test(editEmail.trim())) {
       setEditError('Veuillez entrer un email valide');
+      return;
+    }
+
+    if (
+      users.some(
+        (u) => u.id !== editingUser.id && u.email.toLowerCase() === emailLower
+      )
+    ) {
+      setEditError('Cet email est déjà utilisé par un autre utilisateur');
       return;
     }
 
@@ -290,7 +311,7 @@ export default function UsersScreen() {
         </Pressable>
       </View>
 
-      {/* Search Bar */}
+      {/* Search Bar & Sort Filter */}
       <View style={[styles.searchContainer, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
         <View style={[styles.searchBar, { backgroundColor: colors.background, borderColor: colors.border }]}>
           <Ionicons name="search-outline" size={18} color={colors.secondaryText} style={styles.searchIcon} />
@@ -313,6 +334,63 @@ export default function UsersScreen() {
               <Ionicons name="close-circle" size={18} color={colors.secondaryText} />
             </Pressable>
           )}
+        </View>
+
+        {/* Sort Pills */}
+        <View style={styles.sortRow}>
+          <Pressable
+            onPress={() => setSortMode('recent')}
+            style={[
+              styles.sortPill,
+              { backgroundColor: sortMode === 'recent' ? colors.primary : colors.background },
+            ]}
+            hitSlop={4}
+            accessibilityRole="button"
+            accessibilityLabel="Trier par plus récents">
+            <Text
+              style={[
+                styles.sortPillText,
+                { color: sortMode === 'recent' ? '#FFFFFF' : colors.secondaryText },
+              ]}>
+              Récents
+            </Text>
+          </Pressable>
+
+          <Pressable
+            onPress={() => setSortMode('name')}
+            style={[
+              styles.sortPill,
+              { backgroundColor: sortMode === 'name' ? colors.primary : colors.background },
+            ]}
+            hitSlop={4}
+            accessibilityRole="button"
+            accessibilityLabel="Trier par nom alphabétique">
+            <Text
+              style={[
+                styles.sortPillText,
+                { color: sortMode === 'name' ? '#FFFFFF' : colors.secondaryText },
+              ]}>
+              Nom (A-Z)
+            </Text>
+          </Pressable>
+
+          <Pressable
+            onPress={() => setSortMode('age')}
+            style={[
+              styles.sortPill,
+              { backgroundColor: sortMode === 'age' ? colors.primary : colors.background },
+            ]}
+            hitSlop={4}
+            accessibilityRole="button"
+            accessibilityLabel="Trier par âge croissant">
+            <Text
+              style={[
+                styles.sortPillText,
+                { color: sortMode === 'age' ? '#FFFFFF' : colors.secondaryText },
+              ]}>
+              Âge
+            </Text>
+          </Pressable>
         </View>
       </View>
 
@@ -515,8 +593,27 @@ const styles = StyleSheet.create({
   },
   searchContainer: {
     paddingHorizontal: 16,
-    paddingVertical: 10,
+    paddingTop: 10,
+    paddingBottom: 12,
     borderBottomWidth: 1,
+    gap: 8,
+  },
+  sortRow: {
+    flexDirection: 'row',
+    gap: 8,
+    alignItems: 'center',
+  },
+  sortPill: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+    minHeight: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  sortPillText: {
+    fontSize: 12,
+    fontWeight: '600',
   },
   searchBar: {
     flexDirection: 'row',
