@@ -1,27 +1,19 @@
-import { useEffect, useState } from 'react';
+import { useContext } from 'react';
 import { useColorScheme as useNativeColorScheme } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { SettingsContext } from '@/context/SettingsContext';
 
-export function useColorScheme() {
-  const systemColorScheme = useNativeColorScheme();
-  const [userColorScheme, setUserColorScheme] = useState<'light' | 'dark' | null>(null);
+/**
+ * Returns the active color scheme ('light' | 'dark').
+ * Prefers the user's setting from SettingsContext if available,
+ * otherwise falls back to the native system setting.
+ */
+export function useColorScheme(): 'light' | 'dark' {
+  const settingsContext = useContext(SettingsContext);
+  const systemScheme = useNativeColorScheme() ?? 'light';
 
-  useEffect(() => {
-    // Load saved color scheme preference
-    const loadColorScheme = async () => {
-      try {
-        const savedScheme = await AsyncStorage.getItem('userColorScheme');
-        if (savedScheme) {
-          setUserColorScheme(savedScheme as 'light' | 'dark');
-        }
-      } catch (error) {
-        console.error('Error loading color scheme:', error);
-      }
-    };
+  if (settingsContext?.settings) {
+    return settingsContext.settings.isDarkMode ? 'dark' : 'light';
+  }
 
-    loadColorScheme();
-  }, []);
-
-  // Return user preference if set, otherwise return system preference
-  return userColorScheme || systemColorScheme || 'light';
+  return systemScheme;
 }

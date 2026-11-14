@@ -1,35 +1,38 @@
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useColorScheme } from 'react-native';
+import { useColorScheme as useNativeColorScheme } from 'react-native';
+import { Colors, ThemeColors } from '@/constants/Colors';
 
-interface Settings {
+export interface Settings {
   isDarkMode: boolean;
   language: string;
   allowScreenRotation: boolean;
 }
 
-interface SettingsContextType {
+export interface SettingsContextType {
   settings: Settings;
-  updateSettings: (newSettings: Partial<Settings>) => void;
-  toggleDarkMode: () => void;
-  setLanguage: (language: string) => void;
-  toggleScreenRotation: () => void;
-  resetSettings: () => void;
+  colorScheme: 'light' | 'dark';
+  colors: ThemeColors;
+  updateSettings: (newSettings: Partial<Settings>) => Promise<void>;
+  toggleDarkMode: () => Promise<void>;
+  setLanguage: (language: string) => Promise<void>;
+  toggleScreenRotation: () => Promise<void>;
+  resetSettings: () => Promise<void>;
 }
 
 const defaultSettings: Settings = {
   isDarkMode: false,
-  language: 'en',
+  language: 'fr',
   allowScreenRotation: true,
 };
 
-const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
+export const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
 
 export function SettingsProvider({ children }: { children: ReactNode }) {
-  const systemColorScheme = useColorScheme();
+  const systemColorScheme = useNativeColorScheme();
   const [settings, setSettings] = useState<Settings>({
     ...defaultSettings,
-    isDarkMode: systemColorScheme === 'dark'
+    isDarkMode: systemColorScheme === 'dark',
   });
 
   // Load settings from storage on app start
@@ -43,9 +46,9 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
       try {
         const userTheme = await AsyncStorage.getItem('userColorScheme');
         if (!userTheme) {
-          setSettings(prev => ({
+          setSettings((prev) => ({
             ...prev,
-            isDarkMode: systemColorScheme === 'dark'
+            isDarkMode: systemColorScheme === 'dark',
           }));
         }
       } catch (error) {
@@ -60,7 +63,8 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     try {
       const savedSettings = await AsyncStorage.getItem('appSettings');
       if (savedSettings) {
-        setSettings(JSON.parse(savedSettings));
+        const parsed = JSON.parse(savedSettings);
+        setSettings((prev) => ({ ...prev, ...parsed }));
       }
     } catch (error) {
       console.error('Error loading settings:', error);
@@ -70,62 +74,59 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   const saveSettings = async (newSettings: Settings) => {
     try {
       await AsyncStorage.setItem('appSettings', JSON.stringify(newSettings));
-      // Also save the color scheme preference separately
       await AsyncStorage.setItem('userColorScheme', newSettings.isDarkMode ? 'dark' : 'light');
     } catch (error) {
       console.error('Error saving settings:', error);
     }
   };
 
-  const updateSettings = (newSettings: Partial<Settings>) => {
-    setSettings(prev => {
-      const updated = { ...prev, ...newSettings };
-      saveSettings(updated);
-      return updated;
-    });
+  const updateSettings = async (newSettings: Partial<Settings>) => {
+    const updated = { ...settings, ...newSettings };
+    setSettings(updated);
+    await saveSettings(updated);
   };
 
-  const toggleDarkMode = () => {
-    setSettings(prev => {
-      const updated = { ...prev, isDarkMode: !prev.isDarkMode };
-      saveSettings(updated);
-      return updated;
-    });
+  const toggleDarkMode = async () => {
+    const updated = { ...settings, isDarkMode: !settings.isDarkMode };
+    setSettings(updated);
+    await saveSettings(updated);
   };
 
-  const setLanguage = (language: string) => {
-    setSettings(prev => {
-      const updated = { ...prev, language };
-      saveSettings(updated);
-      return updated;
-    });
+  const setLanguage = async (language: string) => {
+    const updated = { ...settings, language };
+    setSettings(updated);
+    await saveSettings(updated);
   };
 
-  const toggleScreenRotation = () => {
-    setSettings(prev => {
-      const updated = { ...prev, allowScreenRotation: !prev.allowScreenRotation };
-      saveSettings(updated);
-      return updated;
-    });
+  const toggleScreenRotation = async () => {
+    const updated = { ...settings, allowScreenRotation: !settings.allowScreenRotation };
+    setSettings(updated);
+    await saveSettings(updated);
   };
 
   const resetSettings = async () => {
     try {
       await AsyncStorage.removeItem('appSettings');
       await AsyncStorage.removeItem('userColorScheme');
-      setSettings({
+      const reset = {
         ...defaultSettings,
-        isDarkMode: systemColorScheme === 'dark'
-      });
+        isDarkMode: systemColorScheme === 'dark',
+      };
+      setSettings(reset);
     } catch (error) {
       console.error('Error resetting settings:', error);
     }
   };
 
+  const colorScheme = settings.isDarkMode ? 'dark' : 'light';
+  const colors = Colors[colorScheme];
+
   return (
     <SettingsContext.Provider
       value={{
         settings,
+        colorScheme,
+        colors,
         updateSettings,
         toggleDarkMode,
         setLanguage,
@@ -143,4 +144,4 @@ export function useSettings() {
     throw new Error('useSettings must be used within a SettingsProvider');
   }
   return context;
-} 
+}

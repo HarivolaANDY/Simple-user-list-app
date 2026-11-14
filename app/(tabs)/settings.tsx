@@ -1,231 +1,359 @@
-import { StyleSheet, Switch, TouchableOpacity, ScrollView, Alert } from 'react-native';
+import React from 'react';
+import {
+  StyleSheet,
+  Switch,
+  Pressable,
+  ScrollView,
+  Alert,
+  View,
+  Text,
+} from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 
-import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
 import { useSettings } from '@/context/SettingsContext';
-
-const languages = [
-  { code: 'en', name: 'English' },
-  { code: 'es', name: 'Español' },
-  { code: 'fr', name: 'Français' },
-  { code: 'de', name: 'Deutsch' },
-  { code: 'it', name: 'Italiano' },
-];
+import { useUsers } from '@/context/UsersContext';
+import { useColorScheme } from '@/hooks/useColorScheme';
+import { Colors } from '@/constants/Colors';
 
 export default function SettingsScreen() {
-  const { settings, toggleDarkMode, setLanguage, toggleScreenRotation, resetSettings } = useSettings();
+  const insets = useSafeAreaInsets();
+  const { settings, toggleDarkMode, toggleScreenRotation, resetSettings } = useSettings();
+  const { resetUsers } = useUsers();
+  const colorScheme = useColorScheme();
+  const colors = Colors[colorScheme];
 
   const handleResetSettings = () => {
     Alert.alert(
-      "Reset Settings",
-      "Are you sure you want to reset all settings to default?",
+      'Réinitialiser les paramètres',
+      'Voulez-vous rétablir tous les réglages par défaut ?',
       [
+        { text: 'Annuler', style: 'cancel' },
         {
-          text: "Cancel",
-          style: "cancel"
-        },
-        {
-          text: "Reset",
-          style: "destructive",
+          text: 'Réinitialiser',
+          style: 'destructive',
           onPress: async () => {
             try {
               await resetSettings();
-              Alert.alert("Success", "Settings have been reset to default values.");
+              Alert.alert('Succès', 'Les paramètres ont été réinitialisés.');
             } catch (error) {
-              Alert.alert("Error", "Failed to reset settings. Please try again.");
-              console.error('Error resetting settings:', error);
+              Alert.alert('Erreur', 'Impossible de réinitialiser les paramètres.');
+              console.error(error);
             }
-          }
-        }
+          },
+        },
       ]
     );
   };
 
-  const handleLanguageChange = async (language: string) => {
-    try {
-      await setLanguage(language);
-    } catch (error) {
-      Alert.alert("Error", "Failed to change language. Please try again.");
-      console.error('Error changing language:', error);
-    }
-  };
-
-  const handleDarkModeToggle = async () => {
-    try {
-      await toggleDarkMode();
-    } catch (error) {
-      Alert.alert("Error", "Failed to toggle dark mode. Please try again.");
-      console.error('Error toggling dark mode:', error);
-    }
-  };
-
-  const handleScreenRotationToggle = async () => {
-    try {
-      await toggleScreenRotation();
-    } catch (error) {
-      Alert.alert("Error", "Failed to toggle screen rotation. Please try again.");
-      console.error('Error toggling screen rotation:', error);
-    }
+  const handleResetUsers = () => {
+    Alert.alert(
+      'Réinitialiser les utilisateurs',
+      'Voulez-vous restaurer les utilisateurs de démonstration par défaut ?',
+      [
+        { text: 'Annuler', style: 'cancel' },
+        {
+          text: 'Restaurer',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await resetUsers();
+              Alert.alert('Succès', 'La liste des utilisateurs a été réinitialisée.');
+            } catch (error) {
+              Alert.alert('Erreur', 'Impossible de réinitialiser la liste.');
+              console.error(error);
+            }
+          },
+        },
+      ]
+    );
   };
 
   return (
-    <ThemedView style={styles.container}>
-      <ThemedView style={styles.header}>
-        <ThemedText type="title" style={styles.headerTitle}>Settings</ThemedText>
-      </ThemedView>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]} edges={['top']}>
+      {/* Header */}
+      <View style={[styles.header, { borderBottomColor: colors.border, backgroundColor: colors.card }]}>
+        <View>
+          <Text style={[styles.headerTitle, { color: colors.text }]}>Paramètres</Text>
+          <Text style={[styles.headerSubtitle, { color: colors.secondaryText }]}>
+            Préférences de l'application
+          </Text>
+        </View>
+      </View>
 
-      <ScrollView style={styles.content}>
-        <ThemedView style={styles.section}>
-          <ThemedText type="subtitle" style={styles.sectionTitle}>Appearance</ThemedText>
-          
-          <ThemedView style={styles.settingItem}>
-            <ThemedView style={styles.settingInfo}>
-              <ThemedText>Dark Mode</ThemedText>
-              <ThemedText style={styles.settingDescription}>
-                Use dark theme for the app
-              </ThemedText>
-            </ThemedView>
-            <Switch
-              value={settings.isDarkMode}
-              onValueChange={handleDarkModeToggle}
-              trackColor={{ false: '#767577', true: '#81b0ff' }}
-              thumbColor={settings.isDarkMode ? '#007AFF' : '#f4f3f4'}
-            />
-          </ThemedView>
+      <ScrollView
+        style={styles.container}
+        contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 32 }]}
+        showsVerticalScrollIndicator={false}>
+        {/* Section: Apparence */}
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, { color: colors.secondaryText }]}>
+            APPARENCE & AFFICHAGE
+          </Text>
+          <View
+            style={[
+              styles.card,
+              {
+                backgroundColor: colors.card,
+                borderColor: colors.border,
+                shadowColor: '#000',
+                shadowOpacity: colorScheme === 'dark' ? 0.3 : 0.05,
+              },
+            ]}>
+            {/* Dark Mode */}
+            <View style={styles.row}>
+              <View style={[styles.iconContainer, { backgroundColor: colors.background }]}>
+                <Ionicons
+                  name={settings.isDarkMode ? 'moon' : 'sunny'}
+                  size={20}
+                  color={settings.isDarkMode ? colors.primary : '#FF9500'}
+                />
+              </View>
+              <View style={styles.rowInfo}>
+                <Text style={[styles.rowLabel, { color: colors.text }]}>Mode Sombre</Text>
+                <Text style={[styles.rowDescription, { color: colors.secondaryText }]}>
+                  {settings.isDarkMode ? 'Thème sombre actif' : 'Thème clair actif'}
+                </Text>
+              </View>
+              <Switch
+                value={settings.isDarkMode}
+                onValueChange={toggleDarkMode}
+                trackColor={{ false: colors.border, true: colors.primary }}
+                thumbColor="#FFFFFF"
+                accessibilityRole="switch"
+                accessibilityLabel="Basculer le mode sombre"
+                accessibilityHint="Active ou désactive le thème sombre sur toute l'application"
+              />
+            </View>
 
-          <ThemedView style={styles.settingItem}>
-            <ThemedView style={styles.settingInfo}>
-              <ThemedText>Screen Rotation</ThemedText>
-              <ThemedText style={styles.settingDescription}>
-                Allow the app to rotate when device orientation changes
-              </ThemedText>
-            </ThemedView>
-            <Switch
-              value={settings.allowScreenRotation}
-              onValueChange={handleScreenRotationToggle}
-              trackColor={{ false: '#767577', true: '#81b0ff' }}
-              thumbColor={settings.allowScreenRotation ? '#007AFF' : '#f4f3f4'}
-            />
-          </ThemedView>
-        </ThemedView>
+            <View style={[styles.divider, { backgroundColor: colors.border }]} />
 
-        <ThemedView style={styles.section}>
-          <ThemedText type="subtitle" style={styles.sectionTitle}>Language</ThemedText>
-          {languages.map((lang) => (
-            <TouchableOpacity
-              key={lang.code}
-              style={[
-                styles.languageItem,
-                settings.language === lang.code && styles.languageItemActive,
+            {/* Screen Rotation */}
+            <View style={styles.row}>
+              <View style={[styles.iconContainer, { backgroundColor: colors.background }]}>
+                <Ionicons name="phone-portrait-outline" size={20} color={colors.primary} />
+              </View>
+              <View style={styles.rowInfo}>
+                <Text style={[styles.rowLabel, { color: colors.text }]}>Rotation de l'écran</Text>
+                <Text style={[styles.rowDescription, { color: colors.secondaryText }]}>
+                  {settings.allowScreenRotation
+                    ? 'Autoriser le mode paysage'
+                    : 'Verrouillé en mode portrait'}
+                </Text>
+              </View>
+              <Switch
+                value={settings.allowScreenRotation}
+                onValueChange={toggleScreenRotation}
+                trackColor={{ false: colors.border, true: colors.primary }}
+                thumbColor="#FFFFFF"
+                accessibilityRole="switch"
+                accessibilityLabel="Basculer la rotation d'écran"
+                accessibilityHint="Autorise ou verrouille la bascule automatique en mode paysage"
+              />
+            </View>
+          </View>
+        </View>
+
+        {/* Section: Gestion des données */}
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, { color: colors.secondaryText }]}>
+            GESTION DES DONNÉES
+          </Text>
+          <View
+            style={[
+              styles.card,
+              {
+                backgroundColor: colors.card,
+                borderColor: colors.border,
+                shadowColor: '#000',
+                shadowOpacity: colorScheme === 'dark' ? 0.3 : 0.05,
+              },
+            ]}>
+            {/* Reset Users */}
+            <Pressable
+              onPress={handleResetUsers}
+              style={({ pressed }) => [
+                styles.actionRow,
+                { opacity: pressed ? 0.7 : 1 },
               ]}
-              onPress={() => handleLanguageChange(lang.code)}
-            >
-              <ThemedText
-                style={[
-                  styles.languageText,
-                  settings.language === lang.code && styles.languageTextActive,
-                ]}>
-                {lang.name}
-              </ThemedText>
-              {settings.language === lang.code && (
-                <Ionicons name="checkmark" size={20} color="#007AFF" />
-              )}
-            </TouchableOpacity>
-          ))}
-        </ThemedView>
+              accessibilityRole="button"
+              accessibilityLabel="Restaurer les utilisateurs de démonstration"
+              accessibilityHint="Réinitialise la liste locale avec les utilisateurs de démonstration">
+              <View style={[styles.iconContainer, { backgroundColor: colors.background }]}>
+                <Ionicons name="people-outline" size={20} color={colors.primary} />
+              </View>
+              <View style={styles.rowInfo}>
+                <Text style={[styles.rowLabel, { color: colors.text }]}>
+                  Restaurer utilisateurs démo
+                </Text>
+                <Text style={[styles.rowDescription, { color: colors.secondaryText }]}>
+                  Recharger la liste initiale par défaut
+                </Text>
+              </View>
+              <Ionicons name="chevron-forward" size={18} color={colors.tertiaryText} />
+            </Pressable>
 
-        <ThemedView style={styles.section}>
-          <ThemedText type="subtitle" style={styles.sectionTitle}>Reset</ThemedText>
-          <TouchableOpacity
-            style={styles.resetButton}
-            onPress={handleResetSettings}
-          >
-            <Ionicons name="refresh" size={20} color="#FF3B30" />
-            <ThemedText style={styles.resetButtonText}>Reset All Settings</ThemedText>
-          </TouchableOpacity>
-        </ThemedView>
+            <View style={[styles.divider, { backgroundColor: colors.border }]} />
+
+            {/* Reset Settings */}
+            <Pressable
+              onPress={handleResetSettings}
+              style={({ pressed }) => [
+                styles.actionRow,
+                { opacity: pressed ? 0.7 : 1 },
+              ]}
+              accessibilityRole="button"
+              accessibilityLabel="Réinitialiser les préférences"
+              accessibilityHint="Rétablit les paramètres par défaut de l'application">
+              <View style={[styles.iconContainer, { backgroundColor: colors.destructiveLight }]}>
+                <Ionicons name="refresh-outline" size={20} color={colors.destructive} />
+              </View>
+              <View style={styles.rowInfo}>
+                <Text style={[styles.rowLabel, { color: colors.destructive }]}>
+                  Réinitialiser les préférences
+                </Text>
+                <Text style={[styles.rowDescription, { color: colors.secondaryText }]}>
+                  Rétablir tous les réglages par défaut
+                </Text>
+              </View>
+              <Ionicons name="chevron-forward" size={18} color={colors.tertiaryText} />
+            </Pressable>
+          </View>
+        </View>
+
+        {/* Section: Informations */}
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, { color: colors.secondaryText }]}>
+            À PROPOS
+          </Text>
+          <View
+            style={[
+              styles.card,
+              {
+                backgroundColor: colors.card,
+                borderColor: colors.border,
+                shadowColor: '#000',
+                shadowOpacity: colorScheme === 'dark' ? 0.3 : 0.05,
+              },
+            ]}>
+            <View style={styles.infoRow}>
+              <Text style={[styles.infoLabel, { color: colors.secondaryText }]}>Application</Text>
+              <Text style={[styles.infoValue, { color: colors.text }]}>User List</Text>
+            </View>
+            <View style={[styles.divider, { backgroundColor: colors.border }]} />
+            <View style={styles.infoRow}>
+              <Text style={[styles.infoLabel, { color: colors.secondaryText }]}>Version</Text>
+              <Text style={[styles.infoValue, { color: colors.text }]}>1.2.0 (Pro UI/UX)</Text>
+            </View>
+            <View style={[styles.divider, { backgroundColor: colors.border }]} />
+            <View style={styles.infoRow}>
+              <Text style={[styles.infoLabel, { color: colors.secondaryText }]}>Stack</Text>
+              <Text style={[styles.infoValue, { color: colors.text }]}>
+                Expo 52 • React Native 0.76 • TypeScript
+              </Text>
+            </View>
+            <View style={[styles.divider, { backgroundColor: colors.border }]} />
+            <View style={styles.infoRow}>
+              <Text style={[styles.infoLabel, { color: colors.secondaryText }]}>Stockage</Text>
+              <Text style={[styles.infoValue, { color: colors.text }]}>AsyncStorage local</Text>
+            </View>
+          </View>
+        </View>
       </ScrollView>
-    </ThemedView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  safeArea: {
     flex: 1,
   },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 16,
+    paddingHorizontal: 20,
+    paddingVertical: 14,
     borderBottomWidth: 1,
-    borderBottomColor: '#ccc',
-    backgroundColor: '#fff',
   },
   headerTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
+    fontSize: 22,
+    fontWeight: '700',
+    letterSpacing: -0.3,
   },
-  content: {
+  headerSubtitle: {
+    fontSize: 13,
+    marginTop: 2,
+  },
+  container: {
     flex: 1,
+  },
+  scrollContent: {
+    padding: 16,
+    gap: 20,
   },
   section: {
-    padding: 16,
-    gap: 16,
+    gap: 8,
   },
   sectionTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 8,
+    fontSize: 12,
+    fontWeight: '700',
+    letterSpacing: 0.8,
+    marginLeft: 6,
   },
-  settingItem: {
+  card: {
+    borderRadius: 16,
+    borderWidth: 1,
+    paddingHorizontal: 16,
+    paddingVertical: 4,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 6,
+    elevation: 2,
+  },
+  row: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 8,
+    paddingVertical: 12,
+    gap: 12,
+    minHeight: 52,
   },
-  settingInfo: {
+  actionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    gap: 12,
+    minHeight: 52,
+  },
+  iconContainer: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  rowInfo: {
     flex: 1,
-    gap: 4,
+    gap: 2,
   },
-  settingDescription: {
-    fontSize: 14,
-    color: '#666',
+  rowLabel: {
+    fontSize: 15,
+    fontWeight: '600',
   },
-  languageItem: {
+  rowDescription: {
+    fontSize: 12,
+  },
+  divider: {
+    height: 1,
+    width: '100%',
+  },
+  infoRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 12,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#ccc',
+    paddingVertical: 12,
   },
-  languageItemActive: {
-    backgroundColor: '#E5F1FF',
-    borderColor: '#007AFF',
+  infoLabel: {
+    fontSize: 14,
   },
-  languageText: {
-    fontSize: 16,
+  infoValue: {
+    fontSize: 14,
+    fontWeight: '600',
   },
-  languageTextActive: {
-    color: '#007AFF',
-    fontWeight: '500',
-  },
-  resetButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    padding: 12,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#FF3B30',
-    backgroundColor: '#FFF5F5',
-  },
-  resetButtonText: {
-    color: '#FF3B30',
-    fontSize: 16,
-    fontWeight: '500',
-  },
-}); 
+});
